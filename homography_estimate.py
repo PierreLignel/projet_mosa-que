@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 def homography_estimate(x1, y1, x2, y2):
     
     A = np.zeros((8, 8))
-    B = np.zeros((8, 1))
+    B = np.zeros(8)
     H = np.zeros((3, 3))
     
     for i in range(4):
