@@ -95,24 +95,31 @@ def homography_projection(I1, I2, x, y):
 img = plt.imread('qr-code-wall.png')
 img2 = plt.imread('6113e94bc2096_les-femmes-sexposent-expo-exterieur.jpg')
 img_rect = plt.imread('rectangle.jpg')
-img_rect2 = np.copy(img_rect)
+img3 = np.copy(img2)
 
 # Affiche l'image et clique 4 points
-plt.imshow(img2, cmap='gray')  
+plt.imshow(img3, cmap='gray')  
 plt.title("Clique 4 points dans l'ordre souhaité")
 points = plt.ginput(4)
+plt.close()
+
+plt.imshow(img3, cmap='gray')  
+plt.title("Clique 4 points dans l'ordre souhaité")
+points2 = plt.ginput(4)
 plt.close()
 
 
 # Sépare les coordonnées x et y
 x1 = np.array([p[0] for p in points])
 y1 = np.array([p[1] for p in points])
+x2 = np.array([p[0] for p in points2])
+y2 = np.array([p[1] for p in points2])
 w = 500
 h = 500
 
 
-
-I2 = homography_projection(img_rect2, img2, x1, y1)
+Irect = homography_extraction(img3, x1, y1, w, h)
+I2 = homography_projection(Irect, img3, x2, y2)
 
 plt.imshow(I2, cmap='gray') 
 plt.axis('off')              
