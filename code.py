@@ -73,23 +73,24 @@ def homography_extraction(I1, x, y, w, h):
     return I2
 
 img = plt.imread('qr-code-wall.png')
+img2 = plt.imread('6113e94bc2096_les-femmes-sexposent-expo-exterieur.jpg')
 
-x1 = np.array([52, 248, 265, 30])
-y1 = np.array([50, 20, 245, 250])
+# Affiche l'image et clique 4 points
+plt.imshow(img2, cmap='gray')  
+plt.title("Clique 4 points dans l'ordre souhaité")
+points = plt.ginput(4)
+plt.close()
+
+
+# Sépare les coordonnées x et y
+x1 = np.array([p[0] for p in points])
+y1 = np.array([p[1] for p in points])
 w = 500
 h = 500
-# x2 = np.array([25, 25, 75, 75])
-# y2 = np.array([25, 75, 25, 75])
 
 
-# H = homography_estimate(x1, y1, x2, y2)
 
-# x1_tot = np.arange(0, 101)
-# y1_tot = np.arange(0, 101)
-
-# (x2_f, y2_f) = homography_apply(H, x1, y1)
-
-I2 = homography_extraction(img, x1, y1, w, h)
+I2 = homography_extraction(img2, x1, y1, w, h)
 
 plt.imshow(I2, cmap='gray') 
 plt.axis('off')              
