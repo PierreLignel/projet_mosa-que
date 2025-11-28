@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.ndimage import convolve
-from skimage import io, color, feature
+import cv2
 
 
 def homography_estimate(x1, y1, x2, y2):
@@ -49,22 +48,43 @@ def homography_apply(H, x1, y1):
     return x2, y2
 
 
-x1 = np.array([10, 40, 60, 100])
-y1 = np.array([40, 100, 10, 60])
-x2 = np.array([25, 25, 75, 75])
-y2 = np.array([25, 75, 25, 75])
+def homography_extraction(I1, x, y, w, h):
+    x2 = np.array([0, w-1, w-1, 0])
+    y2 = np.array([0, 0, h-1, h-1])
+    
+    H = homography_estimate(x2, y2, x, y)
+    
+    I2 = np.zeros(h,w)
+    
+    x_rect = np.arange(0, w)
+    y_rect = np.arange(0, h)
+    
+    
+    for i in range(len(x_rect)):
+        for j in range(len(y_rect)):
+            (x_1f, y_1f) = homography_apply(H, x_rect[i], y_rect[j])
+            I2[i][j] = I1[round(x_1f[i])][round(y_1f[j])]
+    
+    return I2
+
+img = plt.imread('/net/netud/t/acazaux008/Documents/T_2/traitement_image/barbara_awgn_noise.png').astype('double')
+
+# x1 = np.array([10, 40, 60, 100])
+# y1 = np.array([40, 100, 10, 60])
+# x2 = np.array([25, 25, 75, 75])
+# y2 = np.array([25, 75, 25, 75])
 
 
-H = homography_estimate(x1, y1, x2, y2)
+# H = homography_estimate(x1, y1, x2, y2)
 
-x1_tot = np.arange(0, 101)
-y1_tot = np.arange(0, 101)
+# x1_tot = np.arange(0, 101)
+# y1_tot = np.arange(0, 101)
 
-(x2_f, y2_f) = homography_apply(H, x1, y1)
+# (x2_f, y2_f) = homography_apply(H, x1, y1)
 
-print(H)
-print(x2_f)
-print(y2_f)
+# print(H)
+# print(x2_f)
+# print(y2_f)
 
 
 
