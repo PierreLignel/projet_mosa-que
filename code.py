@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
 
 
 def homography_estimate(x1, y1, x2, y2):
@@ -54,7 +53,13 @@ def homography_extraction(I1, x, y, w, h):
     
     H = homography_estimate(x2, y2, x, y)
     
-    I2 = np.zeros(h,w)
+    if len(I1.shape) == 2:
+        # Image en niveaux de gris
+        I2 = np.zeros((h, w), dtype=I1.dtype)
+    else:
+        # Image couleur RGB
+        channels = I1.shape[2]
+        I2 = np.zeros((h, w, channels), dtype=I1.dtype)
     
     x_rect = np.arange(0, w)
     y_rect = np.arange(0, h)
@@ -63,14 +68,16 @@ def homography_extraction(I1, x, y, w, h):
     for i in range(len(x_rect)):
         for j in range(len(y_rect)):
             (x_1f, y_1f) = homography_apply(H, x_rect[i], y_rect[j])
-            I2[i][j] = I1[round(x_1f[i])][round(y_1f[j])]
+            I2[j][i] = I1[round(y_1f)][round(x_1f)]
     
     return I2
 
-img = plt.imread('/net/netud/t/acazaux008/Documents/T_2/traitement_image/barbara_awgn_noise.png').astype('double')
+img = plt.imread('qr-code-wall.png')
 
-# x1 = np.array([10, 40, 60, 100])
-# y1 = np.array([40, 100, 10, 60])
+x1 = np.array([52, 248, 265, 30])
+y1 = np.array([50, 20, 245, 250])
+w = 500
+h = 500
 # x2 = np.array([25, 25, 75, 75])
 # y2 = np.array([25, 75, 25, 75])
 
@@ -81,6 +88,12 @@ img = plt.imread('/net/netud/t/acazaux008/Documents/T_2/traitement_image/barbara
 # y1_tot = np.arange(0, 101)
 
 # (x2_f, y2_f) = homography_apply(H, x1, y1)
+
+I2 = homography_extraction(img, x1, y1, w, h)
+
+plt.imshow(I2, cmap='gray') 
+plt.axis('off')              
+plt.show()
 
 # print(H)
 # print(x2_f)

@@ -12,11 +12,10 @@ def homography_extraction(I1, x, y, w, h):
     x_rect = np.arange(0, w)
     y_rect = np.arange(0, h)
     
-    (x_1f, y_1f) = homography_apply(H, x_rect, y_rect)
-    
-    for i in range(len(x_1f)):
-        for j in range(len(y_1f)):
-            I2[i][j] = I1[round(x_1f[i])][round(y_1f[j])]
+    for i in range(len(x_rect)):
+        for j in range(len(y_rect)):
+            (x_1f, y_1f) = homography_apply(H, x_rect[i], y_rect[j])
+            I2[j][i] = I1[round(y_1f)][round(x_1f)]
     
     return I2
 
