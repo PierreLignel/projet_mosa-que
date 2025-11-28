@@ -72,8 +72,30 @@ def homography_extraction(I1, x, y, w, h):
     
     return I2
 
+
+def homography_projection(I1, I2, x, y):
+    h, w = I1.shape[:2]
+    x1 = [0, w-1, w-1, 0]
+    y1 = [0, 0, h-1, h-1]
+    
+    H = homography_estimate(x, y, x1, y1)
+
+    for i in range(I2.shape[0]):
+        for j in range(I2.shape[1]):
+            (x2, y2) = homography_apply(H, j, i)
+            x2 = int(round(x2))
+            y2 = int(round(y2))
+            
+            if 0 <= x2 < w and 0 <= y2 < h:
+                I2[i][j] = I1[y2][x2]
+    
+    return I2
+
+
 img = plt.imread('qr-code-wall.png')
 img2 = plt.imread('6113e94bc2096_les-femmes-sexposent-expo-exterieur.jpg')
+img_rect = plt.imread('rectangle.jpg')
+img_rect2 = np.copy(img_rect)
 
 # Affiche l'image et clique 4 points
 plt.imshow(img2, cmap='gray')  
@@ -90,15 +112,12 @@ h = 500
 
 
 
-I2 = homography_extraction(img2, x1, y1, w, h)
+I2 = homography_projection(img_rect2, img2, x1, y1)
 
 plt.imshow(I2, cmap='gray') 
 plt.axis('off')              
 plt.show()
 
-# print(H)
-# print(x2_f)
-# print(y2_f)
 
 
 
