@@ -78,18 +78,55 @@ def homography_projection(I1, I2, x, y):
     x1 = [0, w-1, w-1, 0]
     y1 = [0, 0, h-1, h-1]
     
-    H = homography_estimate(x, y, x1, y1)
+    H = homography_estimate( x, y,x1, y1)
 
-    for i in range(I2.shape[0]):
-        for j in range(I2.shape[1]):
-            (x2, y2) = homography_apply(H, j, i)
+    for yy in range(I2.shape[0]):
+        for xx in range(I2.shape[1]):
+            x2, y2 = homography_apply(H, xx, yy)
             x2 = int(round(x2))
             y2 = int(round(y2))
             
             if 0 <= x2 < w and 0 <= y2 < h:
-                I2[i][j] = I1[y2][x2]
-    
+                I2[yy][xx] = I1[y2][x2]
+
     return I2
+ 
+ def homography_cross_projection(I1, x1, y1, x2, y2):
+    h ,w = I1.shape
+    h_carre = 100
+    w_carre = 100
+    I2 = np.copy(I1)
+    x_carre = [0, w_carre-1, w_carre-1, 0]
+    y_carre = [0, 0, h_carre-1, h_carre-1]
+    H1_c = homography_estimate(x1, y1,x_carre, y_carre)
+    H2_c = homography_estimate(x2, y2,x_carre, y_carre)
+    Hc_2 = np.linalg.inv(H2_c)
+    Hc_1 = np.linalg.inv(H1_c)
+    carre_magique = np.zeros((h, w))
+    for yy in range(I1.shape[0]):
+        for xx in range(I1.shape[1]):
+            x2, y2 = homography_apply(H1_c, xx, yy)
+            x2 = int(round(x2))
+            y2 = int(round(y2))
+            
+            if 0 <= x2 < w_carre and 0 <= y2 < h_carre:
+                xxx ,yyy =homography_apply(Hc_2,x2,y2)
+                xxx = int(round(xxx))
+                yyy = int(round(yyy))
+                I2[yyy][xxx] = I1[yy][xx]
+            else :   
+                x2_bis, y2_bis = homography_apply(H2_c, xx, yy)
+                x2_bis = int(round(x2_bis))
+                y2_bis = int(round(y2_bis))
+                
+                if 0 <= x2_bis < w_carre and 0 <= y2_bis < h_carre:
+                    xxx_bis ,yyy_bis =homography_apply(Hc_1,x2_bis,y2_bis)
+                    xxx_bis = int(round(xxx_bis))
+                    yyy_bis = int(round(yyy_bis))
+                    I2[yyy_bis][xxx_bis] = I1[yy][xx]
+
+    return I2
+
 
 
 img = plt.imread('qr-code-wall.png')
@@ -118,8 +155,9 @@ w = 500
 h = 500
 
 
-Irect = homography_extraction(img3, x1, y1, w, h)
-I2 = homography_projection(Irect, img3, x2, y2)
+# Irect = homography_extraction(img3, x1, y1, w, h)
+# I2 = homography_projection(Irect, img3, x2, y2)
+Irect = homography_cross_projection(img3, x1, y1, x2, y2)
 
 plt.imshow(I2, cmap='gray') 
 plt.axis('off')              
