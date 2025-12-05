@@ -91,39 +91,45 @@ def homography_projection(I1, I2, x, y):
 
     return I2
  
- def homography_cross_projection(I1, x1, y1, x2, y2):
-    h ,w = I1.shape
+def homography_cross_projection(I1, x1, y1, x2, y2):
+    h ,w = I1.shape[:2]
     h_carre = 100
     w_carre = 100
-    I2 = np.copy(I1)
+    I2 = np.zeros_like(I1)
+
     x_carre = [0, w_carre-1, w_carre-1, 0]
     y_carre = [0, 0, h_carre-1, h_carre-1]
     H1_c = homography_estimate(x1, y1,x_carre, y_carre)
     H2_c = homography_estimate(x2, y2,x_carre, y_carre)
-    Hc_2 = np.linalg.inv(H2_c)
-    Hc_1 = np.linalg.inv(H1_c)
+    H1_2 = homography_estimate(x1, y1,x2, y2)
+    H2_1 = homography_estimate(x2, y2,x1, y1)
     carre_magique = np.zeros((h, w))
-    for yy in range(I1.shape[0]):
-        for xx in range(I1.shape[1]):
+    for yy in range(I2.shape[0]):
+        for xx in range(I2.shape[1]):
             x2, y2 = homography_apply(H1_c, xx, yy)
             x2 = int(round(x2))
             y2 = int(round(y2))
             
+            
+            
+            x2_bis, y2_bis = homography_apply(H2_c, xx, yy)
+            x2_bis = int(round(x2_bis))
+            y2_bis = int(round(y2_bis))
             if 0 <= x2 < w_carre and 0 <= y2 < h_carre:
-                xxx ,yyy =homography_apply(Hc_2,x2,y2)
+                xxx ,yyy =homography_apply(H1_2,xx,yy)
                 xxx = int(round(xxx))
                 yyy = int(round(yyy))
+                I2[yyy_bis][xxx_bis] = 0
                 I2[yyy][xxx] = I1[yy][xx]
-            else :   
-                x2_bis, y2_bis = homography_apply(H2_c, xx, yy)
-                x2_bis = int(round(x2_bis))
-                y2_bis = int(round(y2_bis))
-                
+            else:
                 if 0 <= x2_bis < w_carre and 0 <= y2_bis < h_carre:
-                    xxx_bis ,yyy_bis =homography_apply(Hc_1,x2_bis,y2_bis)
+                    xxx_bis ,yyy_bis =homography_apply(H2_1,xx,yy)
                     xxx_bis = int(round(xxx_bis))
                     yyy_bis = int(round(yyy_bis))
+                    I2[yyy_bis][xxx_bis] = 0
                     I2[yyy_bis][xxx_bis] = I1[yy][xx]
+                else:
+                    I2[yy][xx] = I1[yy][xx]
 
     return I2
 
@@ -157,7 +163,7 @@ h = 500
 
 # Irect = homography_extraction(img3, x1, y1, w, h)
 # I2 = homography_projection(Irect, img3, x2, y2)
-Irect = homography_cross_projection(img3, x1, y1, x2, y2)
+I2 = homography_cross_projection(img3, x1, y1, x2, y2)
 
 plt.imshow(I2, cmap='gray') 
 plt.axis('off')              
