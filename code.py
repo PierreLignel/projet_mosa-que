@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+mask = 0
+image = 1
+back  = 2
 
 
 def homography_estimate(x1, y1, x2, y2):
@@ -54,10 +57,10 @@ def homography_extraction(I1, x, y, w, h):
     H = homography_estimate(x2, y2, x, y)
     
     if len(I1.shape) == 2:
-        # Image en niveaux de gris
+        # image en niveaux de gris
         I2 = np.zeros((h, w), dtype=I1.dtype)
     else:
-        # Image couleur RGB
+        # image couleur RGB
         channels = I1.shape[2]
         I2 = np.zeros((h, w, channels), dtype=I1.dtype)
     
@@ -103,7 +106,7 @@ def homography_cross_projection(I1, x1, y1, x2, y2):
     H2_c = homography_estimate(x2, y2,x_carre, y_carre)
     H1_2 = homography_estimate(x1, y1,x2, y2)
     H2_1 = homography_estimate(x2, y2,x1, y1)
-    carre_magique = np.zeros((h, w))
+    #carre_magique = np.zeros((h, w))
     for yy in range(I2.shape[0]):
         for xx in range(I2.shape[1]):
             x2, y2 = homography_apply(H1_c, xx, yy)
@@ -133,6 +136,20 @@ def homography_cross_projection(I1, x1, y1, x2, y2):
     return I2
 
 
+def MIB(I):
+    h, w = I.shape[:2]
+
+    M = np.ones((h, w), dtype=bool)   # mask
+    B = [[0,0], [w-1,0], [w-1,h-1], [0,h-1]]              #Borne
+
+    mib = np.empty(3, dtype=object)   # tableau numpy qui contient 3 objets
+    mib[mask] = M
+    mib[image] = I
+    mib[back] = B
+
+    return mib
+
+    
 
 img = plt.imread('qr-code-wall.png')
 img2 = plt.imread('6113e94bc2096_les-femmes-sexposent-expo-exterieur.jpg')
