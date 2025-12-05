@@ -119,17 +119,16 @@ def homography_cross_projection(I1, x1, y1, x2, y2):
                 xxx ,yyy =homography_apply(H1_2,xx,yy)
                 xxx = int(round(xxx))
                 yyy = int(round(yyy))
-                I2[yyy_bis][xxx_bis] = 0
-                I2[yyy][xxx] = I1[yy][xx]
-            else:
-                if 0 <= x2_bis < w_carre and 0 <= y2_bis < h_carre:
+                
+                I2[yy][xx] = I1[yyy][xxx]
+            elif 0 <= x2_bis < w_carre and 0 <= y2_bis < h_carre:
                     xxx_bis ,yyy_bis =homography_apply(H2_1,xx,yy)
                     xxx_bis = int(round(xxx_bis))
                     yyy_bis = int(round(yyy_bis))
-                    I2[yyy_bis][xxx_bis] = 0
-                    I2[yyy_bis][xxx_bis] = I1[yy][xx]
-                else:
-                    I2[yy][xx] = I1[yy][xx]
+                    
+                    I2[yy][xx] = I1[yyy_bis][xxx_bis]
+            else:
+                I2[yy][xx] = I1[yy][xx]
 
     return I2
 
