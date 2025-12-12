@@ -149,6 +149,28 @@ def MIB(I):
 
     return mib
 
+def MIB_transform(mib, H):
+    mib2 = np.empty(3, dtype=object)
+    mib2[image] = np.zeros_like(mib[image])
+    B2 = mib[back]
+    for i in range(4):
+        (B2[i][0] ,B2[i][1]) = homography_apply(H,mib[back][i][0],mib[back][i][1])
+    mib2[back] = B2
+
+    h, w = mib[image].shape[:2]
+    H_inv = np.linalg.inv(H)
+    M2 = np.zeros((h, w), dtype=bool)
+    for yy in range(h):
+        for xx in range(w):
+            x2, y2 = homography_apply(H, xx, yy)
+            x2 = int(round(x2))
+            y2 = int(round(y2))
+            if 0 <= x2 < w and 0 <= y2 < h:
+                mib2[image][yy][xx] = mib[image][y2][x2]
+                M2[yy][xx] = True
+    mib2[mask] = M2
+    return mib2
+
     
 
 img = plt.imread('qr-code-wall.png')
