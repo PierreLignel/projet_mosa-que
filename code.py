@@ -140,7 +140,7 @@ def MIB(I):
     h, w = I.shape[:2]
 
     M = np.ones((h, w), dtype=bool)   # mask
-    B = [[0,0], [w-1,0], [w-1,h-1], [0,h-1]]              #Borne
+    B = [[0,0], [w-1,h-1]]            #Borne
 
     mib = np.empty(3, dtype=object)   # tableau numpy qui contient 3 objets
     mib[mask] = M
@@ -151,23 +151,36 @@ def MIB(I):
 
 def MIB_transform(mib, H):
     mib2 = np.empty(3, dtype=object)
-    mib2[image] = np.zeros_like(mib[image])
-    B2 = mib[back]
-    for i in range(4):
-        (B2[i][0] ,B2[i][1]) = homography_apply(H,mib[back][i][0],mib[back][i][1])
-    mib2[back] = B2
 
     h, w = mib[image].shape[:2]
+    B2 = mib[back]
+    tab_coins = [[mib[back][0][0],mib[back][0][1]], [mib[back][1][0],mib[back][0][1]], [mib[back][1][0],mib[back][1][1]], [mib[back][0][0],mib[back][1][1]]]
+    for i in range(4):
+        (x, y) = homography_apply(H,tab_coins[i][0],tab_coins[i][1])
+        tab_coins[i][0] = x
+        tab_coins[i][1] = y
+    B2[0][0] = min(tab_coins[:][0])
+    B2[0][1] = min(tab_coins[:][1])
+    B2[1][0] = max(tab_coins[:][0]) 
+    B2[1][1] = max(tab_coins[:][1])
+    dim_x = max(tab_coins[:][0]) - min(tab_coins[:][0])
+    dim_y = max(tab_coins[:][1]) - min(tab_coins[:][1])
+    mib2[back] = B2
+
     H_inv = np.linalg.inv(H)
-    M2 = np.zeros((h, w), dtype=bool)
-    for yy in range(h):
-        for xx in range(w):
-            x2, y2 = homography_apply(H, xx, yy)
+    M2 = np.zeros((dim_y, dim_x), dtype=bool)
+    I2 = np.zeros((dim_y, dim_x))
+    for yy in range(dim_y):
+        for xx in range(dim_x):
+            x2, y2 = homography_apply(H_inv, xx+mib2[back][0][0], yy+mib2[back][0][1])
             x2 = int(round(x2))
             y2 = int(round(y2))
             if 0 <= x2 < w and 0 <= y2 < h:
-                mib2[image][yy][xx] = mib[image][y2][x2]
-                M2[yy][xx] = True
+                if (mib[mask][y2][x2] == True)
+                    mib2[image][yy][xx] = mib[image][y2][x2]
+                    M2[yy][xx] = True
+                else:
+                    M2[yy][xx] = False
     mib2[mask] = M2
     return mib2
 
