@@ -184,6 +184,70 @@ def MIB_transform(mib, H):
     mib2[mask] = M2
     return mib2
 
+def MIBFusion(mib1, mib2):
+    # --- Calcul du back (bounding box fusionné) ---
+    x_min = min(mib1[back][0][0], mib2[back][0][0])
+    y_min = min(mib1[back][0][1], mib2[back][0][1])
+    x_max = max(mib1[back][1][0], mib2[back][1][0])
+    y_max = max(mib1[back][1][1], mib2[back][1][1])
+
+    # Dimensions du MIB résultat
+    H = y_max - y_min + 1
+    W = x_max - x_min + 1
+
+    # --- Allocation du MIB résultat ---
+    mib = np.empty(3, dtype=object)
+    mib[back]  = [[x_min, y_min], [x_max, y_max]]
+    mib[mask]  = np.zeros((H, W), dtype=bool)
+
+    
+    
+        
+    C = mib1[image].shape[2]
+    mib[image] = np.zeros((H, W, C), dtype=mib1[image].dtype)
+
+    # --- Fusion pixel par pixel ---
+    for y in range(H):
+        for x in range(W):
+            # Coordonnées locales dans mib1
+            y1 = y + y_min - mib1[back][0][1]
+            x1 = x + x_min - mib1[back][0][0]
+
+            # Coordonnées locales dans mib2
+            y2 = y + y_min - mib2[back][0][1]
+            x2 = x + x_min - mib2[back][0][0]
+
+            # Masques valides ?
+            m1_valid = (0 <= y1 < mib1[mask].shape[0]) and (0 <= x1 < mib1[mask].shape[1])
+            m2_valid = (0 <= y2 < mib2[mask].shape[0]) and (0 <= x2 < mib2[mask].shape[1])
+            if m1_valid :
+                m1 = mib1[mask][y1, x1]
+            else:
+                m1 = False
+            if m2_valid :
+                m2 = mib2[mask][y2, x2]
+            else:
+                m2 = False
+            
+
+            if m1 or m2:
+                mib[mask][y, x] = True
+
+                if m1 and m2:
+                    # moyenne des pixels
+                    mib[image][y, x] = (mib1[image][y1, x1].astype(np.float32) + 
+                                        mib2[image][y2, x2].astype(np.float32)) / 2
+                    # si nécessaire, reconvertir en uint8
+                    if mib[image].dtype == np.uint8:
+                        mib[image][y, x] = np.round(mib[image][y, x]).astype(np.uint8)
+                elif m1:
+                    mib[image][y, x] = mib1[image][y1, x1]
+                else:
+                    mib[image][y, x] = mib2[image][y2, x2]
+
+    return mib
+
+
     
 
 img = plt.imread('qr-code-wall.png')
