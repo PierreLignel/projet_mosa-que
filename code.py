@@ -194,49 +194,60 @@ def MIB_transform(mib, H):
     mib2[mask] = M2
     return mib2
 
-def MIBFusion(mib_list):
+def MIB_fusion(mib_list):
     assert len(mib_list) > 0, "La liste de MIB est vide"
 
-    # --- Fusion des bounding boxes ---
+    # --- 1. Fusion des bounding boxes ---
     x_min = min(mib[back][0][0] for mib in mib_list)
     y_min = min(mib[back][0][1] for mib in mib_list)
     x_max = max(mib[back][1][0] for mib in mib_list)
     y_max = max(mib[back][1][1] for mib in mib_list)
 
-    H = y_max - y_min + 1
-    W = x_max - x_min + 1
-    C = mib_list[0][image].shape[2]
+    # On s'assure que ce sont des entiers pour les dimensions
+    H = int(round(y_max - y_min + 1))
+    W = int(round(x_max - x_min + 1))
+    
+    # On utilise le premier MIB de la liste pour les propriétés de base
+    C = mib_list[0][image].shape[2]   
+    dtype_out = mib_list[0][image].dtype
 
-    # --- Allocation du MIB résultat ---
-    mib = np.empty(3, dtype=object)
-    mib[back] = [[x_min, y_min], [x_max, y_max]]
-    mib[mask] = np.zeros((H, W), dtype=bool)
-    mib[image] = np.zeros((H, W, C), dtype=np.float32)
+    # --- 2. Allocation du MIB résultat ---
+    mib_res = np.empty(3, dtype=object)
+    mib_res[back] = [[x_min, y_min], [x_max, y_max]]
+    mib_res[mask] = np.zeros((H, W), dtype=bool)
+    # On travaille toujours en float32 pendant le calcul de la moyenne
+    mib_res[image] = np.zeros((H, W, C), dtype=np.float32)
 
-    # --- Fusion pixel par pixel ---
+    # --- 3. Fusion pixel par pixel ---
     for y in range(H):
         for x in range(W):
-
             pixels = []
             for m in mib_list:
-                # coordonnées locales dans ce MIB
-                yl = y + y_min - m[back][0][1]
-                xl = x + x_min - m[back][0][0]
+                # Calcul des coordonnées locales dans chaque MIB
+                yl = int(round(y + y_min - m[back][0][1]))
+                xl = int(round(x + x_min - m[back][0][0]))
 
+                # Vérification si le pixel est dans les limites du masque et s'il est True
                 if (0 <= yl < m[mask].shape[0] and
                     0 <= xl < m[mask].shape[1] and
                     m[mask][yl, xl]):
-
+                    
                     pixels.append(m[image][yl, xl].astype(np.float32))
 
-            if pixels:
-                mib[mask][y, x] = True
-                mib[image][y, x] = np.mean(pixels, axis=0)
+            if len(pixels) > 0:
+                mib_res[mask][y, x] = True
+                # Moyenne de tous les pixels collectés
+                mib_res[image][y, x] = np.mean(pixels, axis=0)
 
-    
+    # --- 4. Conversion finale (Correction du bug de couleur) ---
+    if np.issubdtype(dtype_out, np.integer):
+        # Si c'était du uint8 (0-255), on arrondit et on clip
+        mib_res[image] = np.round(mib_res[image]).clip(0, 255).astype(dtype_out)
+    else:
+        # Si c'était du float (0.0-1.0), on garde tel quel (on ne divise pas par 255 !)
+        mib_res[image] = mib_res[image].astype(dtype_out)
 
-    return mib
-
+    return mib_res
     
 
 img = plt.imread('qr-code-wall.png')
@@ -321,12 +332,17 @@ mib2 = MIB(Irect2)
 mib3 = MIB(Irect3)
 
 mib2_t = MIB_transform(mib2, H21)
-mib_f = MIBFusion(mib1, mib2_t)
+H31 = H21 @ H32 # On combine les deux matrices (3->2 puis 2->1)
+mib3_t = MIB_transform(mib3, H31)
+mib_list = []
+mib_list.append(mib1)
+mib_list.append(mib2_t)
+mib_list.append(mib3_t)
 
-mib3_t = MIB_transform(mib3, H32)
-mib3_f = MIB_transform(mib3_t, H21)
 
-mib_ff = MIBFusion(mib_f, mib3_f)
+
+mib_ff = MIB_fusion(mib_list)
+
 
 
 plt.imshow(mib_ff[image], cmap='gray')  
