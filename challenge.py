@@ -260,97 +260,31 @@ def MIBFusion(mib1, mib2):
 
     
 
-img = plt.imread('qr-code-wall.png')
-img2 = plt.imread('6113e94bc2096_les-femmes-sexposent-expo-exterieur.jpg')
-img_rect = plt.imread('rectangle.jpg')
-img3 = np.copy(img2)
+img = plt.imread('challenge1.png')
+
+# Affiche l'image et clique 4 points
+plt.imshow(img, cmap='gray')  
+plt.title("Clique 4 points dans l'ordre souhaité")
+points = plt.ginput(4)
+plt.close()
+
+# plt.imshow(img3, cmap='gray')  
+# plt.title("Clique 4 points dans l'ordre souhaité")
+# points2 = plt.ginput(4)
+# plt.close()
+
+
+# Sépare les coordonnées x et y
+x = np.array([p[0] for p in points])
+y = np.array([p[1] for p in points])
 w = 500
 h = 500
 
-#Selection des trois images
-# Affiche l'image et clique 4 points
-plt.imshow(img3, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité 1")
-points = plt.ginput(4)
-plt.close()
 
-x1 = np.array([p[0] for p in points])
-y1 = np.array([p[1] for p in points])
-
-plt.imshow(img3, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité 2")
-points2 = plt.ginput(4)
-plt.close()
-
-x2 = np.array([p[0] for p in points2])
-y2 = np.array([p[1] for p in points2])
-
-plt.imshow(img3, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité 3")
-points = plt.ginput(4)
-plt.close()
-
-x3 = np.array([p[0] for p in points])
-y3 = np.array([p[1] for p in points])
-
-Irect1 = homography_extraction(img3, x1, y1, w, h)
-Irect2 = homography_extraction(img3, x2, y2, w, h)
-Irect3 = homography_extraction(img3, x3, y3, w, h)
+Irect = homography_extraction(img, x, y, w, h)
 
 
-#On prend les points en commun a chaque fois
-plt.imshow(Irect1, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité 12")
-points = plt.ginput(4)
-plt.close()
-
-xh1 = np.array([p[0] for p in points])
-yh1 = np.array([p[1] for p in points])
-
-plt.imshow(Irect2, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité 12")
-points = plt.ginput(4)
-plt.close()
-
-xh2 = np.array([p[0] for p in points])
-yh2 = np.array([p[1] for p in points])
-
-plt.imshow(Irect2, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité 23")
-points = plt.ginput(4)
-plt.close()
-
-xh3 = np.array([p[0] for p in points])
-yh3 = np.array([p[1] for p in points])
-
-plt.imshow(Irect3, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité 23")
-points = plt.ginput(4)
-plt.close()
-
-xh4 = np.array([p[0] for p in points])
-yh4 = np.array([p[1] for p in points])
-
-
-H21 = homography_estimate(xh2, yh2, xh1, yh1)
-H32 = homography_estimate(xh4, yh4, xh3, yh3)
-
-
-
-mib1 = MIB(Irect1)
-mib2 = MIB(Irect2)
-mib3 = MIB(Irect3)
-
-mib2_t = MIB_transform(mib2, H21)
-mib_f = MIBFusion(mib1, mib2_t)
-
-mib3_t = MIB_transform(mib3, H32)
-mib3_f = MIB_transform(mib3_t, H21)
-
-mib_ff = MIBFusion(mib_f, mib3_f)
-
-
-plt.imshow(mib_ff[image], cmap='gray')  
+plt.imshow(Irect, cmap='gray')  
 plt.title("srtgf")
 plt.show()
 
