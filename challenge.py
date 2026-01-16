@@ -262,31 +262,129 @@ def MIBFusion(mib1, mib2):
 
 img = plt.imread('challenge1.png')
 
+if img.ndim == 2:
+    height, width = img.shape
+    white_rect = np.ones((500, width))
+else:
+    height, width, channels = img.shape
+    white_rect = np.ones((500, width, channels))
+
+# Concaténer le rectangle noir au-dessus de l'image
+new_img = np.vstack((white_rect, img))
+
 # Affiche l'image et clique 4 points
-plt.imshow(img, cmap='gray')  
-plt.title("Clique 4 points dans l'ordre souhaité")
+plt.imshow(new_img, cmap='gray')  
+plt.title("Clique 4 points dans l'ordre souhaité 1")
 points = plt.ginput(4)
 plt.close()
 
-# plt.imshow(img3, cmap='gray')  
-# plt.title("Clique 4 points dans l'ordre souhaité")
-# points2 = plt.ginput(4)
-# plt.close()
-
-
-# Sépare les coordonnées x et y
 x = np.array([p[0] for p in points])
 y = np.array([p[1] for p in points])
 w = 500
 h = 500
 
+Irect = homography_extraction(new_img, x, y, w, h)
+# 1. Récupération des données
+data = np.array(Irect)
 
-Irect = homography_extraction(img, x, y, w, h)
+# --- BLOC DE DIAGNOSTIC (Affiche les infos pour comprendre) ---
+print(f"Type de données : {data.dtype}")
+print(f"Valeur min : {data.min()}, Valeur max : {data.max()}")
+print(f"Forme de l'image : {data.shape}")
+# --------------------------------------------------------------
+
+# 2. CORRECTION AUTOMATIQUE 0-1 vs 0-255
+# Si le maximum est petit (<= 1.0), c'est que l'image est en float 0-1.
+# On la remet en 0-255.
+if data.max() <= 1.0:
+    print(">> Correction : Conversion de l'image de 0-1 vers 0-255")
+    data = (data * 255).astype(np.int16)
+else:
+    # Sinon on s'assure juste d'avoir des entiers signés pour la soustraction
+    data = data.astype(np.int16)
+
+# 3. GESTION DU 4ème CANAL (Transparence/Alpha)
+if data.shape[-1] == 4:
+    data = data[:, :, :3]
+
+# Définition des couleurs
+colors = {
+    "rouge": [255, 0, 0],
+    "jaune": [255, 255, 0],
+    "vert": [0, 255, 0],
+    "magenta": [255, 0, 255],
+    "rose": [255, 192, 203],
+    "cyan": [0, 255, 255],
+    "bleu": [0, 0, 255],
+    "blanc": [255, 255, 255], # Ajouté pour test
+    "noir": [0, 0, 0]
+}
+
+tol = 50
+pixel_counts = {}
+
+# On parcourt chaque pixel pour trouver la couleur LA PLUS PROCHE
+# (Cette méthode est plus précise que ton masque précédent qui pouvait compter un pixel deux fois)
+
+# Aplatir l'image en une liste de pixels (N, 3) pour aller plus vite
+pixels = data.reshape(-1, 3)
+nb_total_pixels = len(pixels)
+
+print(f"Analyse de {nb_total_pixels} pixels...")
+
+# Initialiser les compteurs à 0
+for c in colors:
+    pixel_counts[c] = 0
+pixel_counts["inconnu"] = 0
+
+# VERSION VECTORISÉE RAPIDE (Calcule la distance avec toutes les couleurs)
+# On ne boucle pas sur les pixels (trop lent), on boucle sur les couleurs
+distances = []
+color_names = list(colors.keys())
+color_values = np.array(list(colors.values())) # Forme (Nb_couleurs, 3)
+
+# Pour chaque pixel, on calcule la distance vers chaque couleur de référence
+# Astuce NumPy : On utilise broadcasting
+# pixels[:, None, :] a la forme (N_pixels, 1, 3)
+# color_values[None, :, :] a la forme (1, N_couleurs, 3)
+# La diff nous donne (N_pixels, N_couleurs, 3)
+# C'est lourd en mémoire si l'image est énorme. Si l'image est petite/moyenne (ex: < 1000x1000), ça passe.
+
+# Si l'image est grande, on utilise une méthode plus simple :
+# On calcule la distance pour chaque couleur séparément.
+min_distances = np.full(len(pixels), 9999) # Distance min trouvée pour chaque pixel
+closest_color_indices = np.full(len(pixels), -1) # Index de la couleur trouvée
+
+for idx, (name, rgb) in enumerate(zip(color_names, color_values)):
+    # Distance euclidienne (plus précise que la valeur absolue simple)
+    # dist = sqrt((r1-r2)² + (g1-g2)² + (b1-b2)²)
+    d = np.linalg.norm(pixels - rgb, axis=1)
+    
+    # Si cette couleur est plus proche que la précédente trouvée pour ce pixel
+    better_mask = d < min_distances
+    min_distances[better_mask] = d[better_mask]
+    closest_color_indices[better_mask] = idx
+
+# Maintenant on filtre ceux qui sont hors tolérance
+valid_mask = min_distances <= tol
+
+# Compter
+import collections
+found_indices = closest_color_indices[valid_mask]
+counts = collections.Counter(found_indices)
+
+for idx, count in counts.items():
+    pixel_counts[color_names[idx]] = count
+
+pixel_counts["inconnu"] = nb_total_pixels - np.sum(valid_mask)
+
+# Affichage
+sorted_counts = sorted(pixel_counts.items(), key=lambda x: x[1], reverse=True)
+for color, count in sorted_counts:
+    if count > 0:
+        print(f"{color}: {count} pixels")
 
 
-plt.imshow(Irect, cmap='gray')  
-plt.title("srtgf")
-plt.show()
 
 
 

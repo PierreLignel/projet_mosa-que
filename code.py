@@ -346,7 +346,7 @@ mib_ff = MIB_fusion(mib_list)
 
 
 plt.imshow(mib_ff[image], cmap='gray')  
-plt.title("srtgf")
+plt.title("MIB fusion finale")
 plt.show()
 
 
